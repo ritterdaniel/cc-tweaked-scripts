@@ -88,7 +88,8 @@ local function crafter()
   local subscribedEvents = {
     inItemAvailable = true,
     outItemAvailable = true,
-    outChestEmpty = true
+    outChestEmpty = true,
+    inChestEmpty = true
   }
   local currentState = state.startup
 
@@ -99,7 +100,7 @@ local function crafter()
       if event == "inItemAvailable" and currentState ~= state.startup then
         if currentState == state.idle then
           setRedstoneOutput(devices.pipe, false)
-          setRedstoneOutput(devices.rsCrafter, false)
+          -- setRedstoneOutput(devices.rsCrafter, false)
           currentState = state.crafting
         end
         item = param
@@ -115,9 +116,7 @@ local function crafter()
         currentState = state.idle
       elseif event == "outChestEmpty" and currentState == state.startup then
         currentState = state.idle
-      end
-
-      if currentState == state.idle then
+      elseif event == "inChestEmpty" and currentState == state.idle then
         toggleRedstoneOutput(devices.rsCrafter)
       end
     end
@@ -133,6 +132,8 @@ local function inChestMonitor()
       if item then
         debug("inChestMonitor - Item:".. item.displayName)
         os.queueEvent("inItemAvailable", {slot = slot, name = item.displayName})
+      else
+        os.queueEvent("inChestEmpty")
       end
     end
     local event = coroutine.yield("timer")
