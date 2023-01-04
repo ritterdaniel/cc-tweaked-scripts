@@ -1,0 +1,5 @@
+[Application]
+appFolder = drscripts
+
+[Files]
+farmers_delight/meal_cooker.lua
