@@ -84,7 +84,6 @@ local function toggleRedstoneOutput(redstoneDevice)
 end
 
 local function crafter()
-  local inItemAvailable = false
   local item = {}
   local subscribedEvents = {
     inItemAvailable = true,
@@ -97,13 +96,14 @@ local function crafter()
     local event, param = coroutine.yield()
     if subscribedEvents[event] then
       debug("Crafter - Event - " .. event)
-      if event == "inItemAvailable" and currentState == state.idle then
+      if event == "inItemAvailable" and currentState ~= state.startup then
+        if currentState == state.idle then
+          setRedstoneOutput(devices.pipe, false)
+          setRedstoneOutput(devices.rsCrafter, false)
+          currentState = state.crafting
+        end
         item = param
-        inItemAvailable = true
-        setRedstoneOutput(devices.pipe, false)
-        setRedstoneOutput(devices.rsCrafter, false)
-        currentState = state.crafting
-        debug("Crafter - IA:", inItemAvailable, " STATE:", currentState)
+        debug("Crafter - IA:", item.name, " STATE:", currentState)
         if config.containerItems[item.name] then
           pushItem(devices.inChest, devices.containerChest, item)
         else
