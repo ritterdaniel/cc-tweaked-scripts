@@ -24,7 +24,8 @@ local devices = {
 local config = {
   tick = 1, -- seconds
   debug = false,
-  crafterInItemSlots = {1, 2, 3, 4, 5, 6},
+  crafterInItemMaxSlot = 6,
+  crafterOutItemSlot = 9,
   containerItems = {
     Bowl = true
   }
@@ -52,21 +53,24 @@ local function debug(...)
   end
 end
 
-local function pushItem(fromChest, toChest, item, slot)
+local function pushItem(fromChest, toChest, item, maxSlot)
   local toChestName = peripheral.getName(toChest)
-  if slot == nil then
-    for _, cslot in ipairs(config.crafterInItemSlots) do
-      if not toChest.getItemDetail(cslot) then -- empty slot
-        slot = cslot
-      end
+  if maxSlot == nil then
+    maxSlot = toChest.size()
+  end
+  local slot = nil
+  for cslot = 1, maxSlot, 1 do
+    if toChest.getItemDetail(cslot) == nil then -- empty slot
+      slot = cslot
+      break
     end
   end
 
   if slot == nil then
-    return nil
+    return {nil, nil}
   else
-    fromChest.pushItems(toChestName, item.slot, 1, slot)
-    return slot
+    local movedItems = fromChest.pushItems(toChestName, item.slot, 1, slot)
+    return {slot, movedItems}
   end
 end
 
@@ -103,7 +107,7 @@ local function crafter()
         if config.containerItems[item.name] then
           pushItem(devices.inChest, devices.containerChest, item)
         else
-          pushItem(devices.inChest, devices.crafter, item)
+          pushItem(devices.inChest, devices.crafter, item, config.crafterInItemMaxSlot)
         end
       elseif event == "outItemAvailable" then
         item = param
