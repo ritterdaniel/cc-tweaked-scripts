@@ -124,7 +124,9 @@ local function crafter()
 end
 
 local function inChestMonitor()
+  local itemFound = false
   repeat
+    itemFound = false
     debug("inChestMonitor - Timer Event")
     local slot, itemName = nextItem(devices.inChest)
     if slot then
@@ -132,9 +134,11 @@ local function inChestMonitor()
       if item then
         debug("inChestMonitor - Item:".. item.displayName)
         os.queueEvent("inItemAvailable", {slot = slot, name = item.displayName})
-      else
-        os.queueEvent("inChestEmpty")
+        itemFound = true
       end
+    end
+    if not itemFound then
+      os.queueEvent("inChestEmpty")
     end
     local event = coroutine.yield("timer")
   until event[1] == "terminate"
