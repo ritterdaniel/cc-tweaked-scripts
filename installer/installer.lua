@@ -111,7 +111,7 @@ local function dump(o)
 end
 
 local branch = "main"
-local baseUrl = "https://github.com/ritterdaniel/cc-tweaked-scripts"
+local baseUrl = "https://raw.githubusercontent.com/ritterdaniel/cc-tweaked-scripts"
 local appFile = "app.ccinstall"
 local targetPath
 local installTestfiles = false

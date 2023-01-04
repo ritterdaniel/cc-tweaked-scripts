@@ -1,22 +1,37 @@
 local devices = {
-  crafter = peripheral.wrap("right"), -- Cooking Pot
-  inChest = peripheral.wrap("up"),
-  outChest = peripheral.wrap("down")
+  -- Cooking Pot
+  crafter = peripheral.wrap("farmersdelight:cooking_pot_3"),
+
+  -- Chest which receives all items for crafting recipe
+  inChest = peripheral.wrap("ironchest:iron_chest_3"),
+
+  -- Chest where container items should be put in
+  containerChest = peripheral.wrap("ironchest:iron_chest_4"),
+
+  -- RS crafter, to receive redstone pulse for next item set (redrouter instance)
+  rsCrafter = {
+    device = peripheral.wrap("redrouter_1"),
+    side = "top"
+  },
+
+  -- Outgoing pipe, to receive redstone signal to pull crafted item from crafter (redrouter instance)
+  pipe = {
+    device = peripheral.wrap("redrouter_0"),
+    side = "left"
+  }
 }
 
 local config = {
   tick = 1, -- seconds
   debug = false,
   crafterInItemSlots = {1, 2, 3, 4, 5, 6},
-  crafterContainerSlot = 7,
-  crafterOutItemSlot = 8,
   containerItems = {
     Bowl = true
-  },
-  redstonePulseSide = "back"
+  }
 }
 
 local state = {
+  startup = "STARTUP",
   idle = "IDLE",
   crafting = "CRAFTING"
 }
@@ -41,7 +56,7 @@ local function pushItem(fromChest, toChest, item, slot)
   local toChestName = peripheral.getName(toChest)
   if slot == nil then
     for _, cslot in ipairs(config.crafterInItemSlots) do
-      if not toChest.getItemDetail(slot) then -- empty slot
+      if not toChest.getItemDetail(cslot) then -- empty slot
         slot = cslot
       end
     end
@@ -55,42 +70,51 @@ local function pushItem(fromChest, toChest, item, slot)
   end
 end
 
-local function crafter()
-  -- local crafterName = peripheral.getName(devices.crafter)
-  local inChest = devices.inChest
+local function setRedstoneOutput(redstoneDevice, on)
+  redstoneDevice.device.setOutput(redstoneDevice.side, on)
+end
 
+local function toggleRedstoneOutput(redstoneDevice)
+  local state = redstoneDevice.device.getOutput(redstoneDevice.side)
+  redstoneDevice.device.setOutput(redstoneDevice.side, not state)
+end
+
+local function crafter()
   local inItemAvailable = false
   local item = {}
   local subscribedEvents = {
     inItemAvailable = true,
     outItemAvailable = true,
-    inChestEmpty = true
+    outChestEmpty = true
   }
-  local currentState = state.idle
+  local currentState = state.startup
 
   repeat
     local event, param = coroutine.yield()
     if subscribedEvents[event] then
       debug("Crafter - Event - " .. event)
-      if event == "inItemAvailable" then
+      if event == "inItemAvailable" and currentState == state.idle then
         item = param
         inItemAvailable = true
-        redstone.setOutput(config.redstonePulseSide, false)
+        setRedstoneOutput(devices.pipe, false)
+        setRedstoneOutput(devices.rsCrafter, false)
         currentState = state.crafting
         debug("Crafter - IA:", inItemAvailable, " STATE:", currentState)
         if config.containerItems[item.name] then
-          pushItem(devices.inChest, devices.crafter, item, config.crafterContainerSlot)
+          pushItem(devices.inChest, devices.containerChest, item)
         else
           pushItem(devices.inChest, devices.crafter, item)
         end
       elseif event == "outItemAvailable" then
         item = param
-        pushItem(devices.crafter, devices.outChest, item)
+        setRedstoneOutput(devices.pipe, true)
+        currentState = state.idle
+      elseif event == "outChestEmpty" and currentState == state.startup then
         currentState = state.idle
       end
 
       if currentState == state.idle then
-        redstone.setOutput(config.redstonePulseSide, not redstone.getOutput(config.redstonePulseSide))
+        toggleRedstoneOutput(devices.rsCrafter)
       end
     end
   until event == "terminate"
@@ -105,8 +129,6 @@ local function inChestMonitor()
       if item then
         debug("inChestMonitor - Item:".. item.displayName)
         os.queueEvent("inItemAvailable", {slot = slot, name = item.displayName})
-      else
-        os.queueEvent("inChestEmpty")
       end
     end
     local event = coroutine.yield("timer")
@@ -121,6 +143,8 @@ local function outChestMonitor()
     if item then
       debug("inChestMonitor - Item:".. item.displayName)
       os.queueEvent("outItemAvailable", {slot = slot, name = item.displayName})
+    else
+      os.queueEvent("outChestEmpty")
     end
     local event = coroutine.yield("timer")
   until event[1] == "terminate"
