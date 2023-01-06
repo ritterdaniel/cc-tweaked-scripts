@@ -27,7 +27,8 @@ local config = {
   crafterInItemMaxSlot = 6,
   crafterOutItemSlot = 9,
   containerItems = {
-    Bowl = true
+    Bowl = true,
+    Pumpkin = true
   }
 }
 
@@ -110,6 +111,7 @@ local function crafter()
         else
           pushItem(devices.inChest, devices.crafter, item, config.crafterInItemMaxSlot)
         end
+        os.queueEvent("inChestCheckNextItem")
       elseif event == "outItemAvailable" then
         item = param
         setRedstoneOutput(devices.pipe, true)
@@ -125,23 +127,29 @@ end
 
 local function inChestMonitor()
   local itemFound = false
+  local subscribedEvents = {
+    timer = true,
+    inChestCheckNextItem = true
+  }
   repeat
-    itemFound = false
-    debug("inChestMonitor - Timer Event")
-    local slot, itemName = nextItem(devices.inChest)
-    if slot then
-      local item = devices.inChest.getItemDetail(slot)
-      if item then
-        debug("inChestMonitor - Item:".. item.displayName)
-        os.queueEvent("inItemAvailable", {slot = slot, name = item.displayName})
-        itemFound = true
+    local event, _ = coroutine.yield()
+    if subscribedEvents[event] then
+      itemFound = false
+      debug("inChestMonitor - Event - ".. event)
+      local slot, itemName = nextItem(devices.inChest)
+      if slot then
+        local item = devices.inChest.getItemDetail(slot)
+        if item then
+          debug("inChestMonitor - Item:".. item.displayName)
+          os.queueEvent("inItemAvailable", {slot = slot, name = item.displayName})
+          itemFound = true
+        end
+      end
+      if not itemFound then
+        os.queueEvent("inChestEmpty")
       end
     end
-    if not itemFound then
-      os.queueEvent("inChestEmpty")
-    end
-    local event = coroutine.yield("timer")
-  until event[1] == "terminate"
+  until event == "terminate"
 end
 
 local function outChestMonitor()
