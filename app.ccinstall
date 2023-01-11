@@ -3,3 +3,5 @@ appFolder = drscripts
 
 [Files]
 farmers_delight/meal_cooker.lua
+powah/energizing_orb.lua
+powah/peripherals.lua
