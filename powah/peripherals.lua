@@ -5,13 +5,14 @@ SlotRange = {
 
 function SlotRange:new(params, maxSlots)
   local o = {
-    first = params.first,
-    last = params.last
+    first = 1
   }
-  if o.first == nil then
-    o.first = 1
+  if params and params.first then
+    o.first = params.first
   end
-  if o.last == nil then
+  if params and params.last then
+    o.last = params.last
+  else
     o.last = maxSlots
   end
   setmetatable(o, self)
@@ -32,7 +33,7 @@ function Inventory:new(deviceName, inSlotParams, outSlotParams)
     name = deviceName
   }
   o.outSlots = SlotRange:new(outSlotParams, o.device.size())
-  o.inSlots = SlotRange:new(inSlotParams. o.device.size())
+  o.inSlots = SlotRange:new(inSlotParams, o.device.size())
   setmetatable(o, self)
   self.__index = self
   return o
