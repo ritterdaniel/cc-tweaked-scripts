@@ -1,7 +1,7 @@
 require "peripherals"
 
   -- Energizing Orb
-local crafter = Inventory:new("powah:energizing_orb_0", SlotRange:new(2), SlotRange:new(1, 1))
+local crafter = Inventory:new("powah:energizing_orb_0", {first = 1, last = 1}, {first = 2})
 
 --   -- Chest which receives all items for crafting recipe
 -- local inChest = Inventory:new("ironchest:iron_chest_3")
