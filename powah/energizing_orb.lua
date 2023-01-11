@@ -38,6 +38,7 @@ end
 local function craftingHandler()
   local subscribedEvents = {
     inItemAvailable = true,
+    inItemNotAvailable = true,
     craftedItemAvailable = true,
     craftedItemNotAvailable = true
   }
@@ -51,9 +52,7 @@ local function craftingHandler()
         if currentState == state.idle then
           currentState = state.crafting
         end
-        local itemStack = param
-        debug("Crafter - IA:", itemStack.name, " STATE:", currentState)
-        -- crafter.importItemStack(itemStack)
+        debug("Crafter - STATE:", currentState)
         -- os.queueEvent("inChestCheckNextItem")
       elseif event == "craftedItemAvailable" then
         local itemStack = param
@@ -64,9 +63,9 @@ local function craftingHandler()
         debug("Crafter - IA:", itemStack.name, " STATE:", currentState, " COUNT: ", result)
       elseif event == "craftedItemNotAvailable" and currentState == state.startup then
         currentState = state.idle
-      end
-
-      if currentState == state.idle then
+        debug("Crafter - STATE:", currentState)
+      elseif event == "inItemNotAvailable" and currentState == state.idle then
+        debug("Crafter - PULSE")
         rsCrafter:toggleOutput()
       end
     end
@@ -82,10 +81,8 @@ local function inChestMonitor()
     local event, _ = coroutine.yield()
     if subscribedEvents[event] then
       debug("inChestMonitor - Event - ".. event)
-      local itemStack = crafter:nextItemStack()
-      if itemStack then
-        debug("inChestMonitor - Item:".. itemStack.displayName)
-        os.queueEvent("inItemAvailable", itemStack)
+      if crafter:hasImportedItems() then
+        os.queueEvent("inItemAvailable")
       else
         os.queueEvent("inItemNotAvailable")
       end
@@ -96,9 +93,9 @@ end
 local function craftedItemMonitor()
   repeat
     debug("craftedItemMonitor - Timer Event")
-    local itemStack = crafter:nextItemStack()
+    local itemStack = crafter:nextExportableItemStack()
     if itemStack then
-      debug("inChestMonitor - Item:".. itemStack.displayName)
+      debug("craftedItemMonitor - Item:".. itemStack.displayName)
       os.queueEvent("craftedItemAvailable", itemStack)
     else
       os.queueEvent("craftedItemNotAvailable")

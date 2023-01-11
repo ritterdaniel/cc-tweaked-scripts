@@ -39,7 +39,7 @@ function Inventory:new(deviceName, inSlotParams, outSlotParams)
   return o
 end
 
-function Inventory:nextItemStack()
+function Inventory:nextExportableItemStack()
   for slot = self.outSlots.first, self.outSlots.last do
     local itemStack = self.device.getItemDetail(slot)
     if itemStack then
@@ -50,6 +50,17 @@ function Inventory:nextItemStack()
   end
   return nil
 end
+
+function Inventory:hasImportedItems()
+  for slot = self.inSlots.first, self.inSlots.last do
+    local itemStack = self.device.getItemDetail(slot)
+    if itemStack then
+      return true
+    end
+  end
+  return false
+end
+
 
 function Inventory:importItemStack(itemStack)
   local remainder = itemStack.count
