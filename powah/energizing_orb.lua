@@ -38,7 +38,6 @@ end
 local function craftingHandler()
   local subscribedEvents = {
     inItemAvailable = true,
-    inItemNotAvailable = true,
     craftedItemAvailable = true,
     craftedItemNotAvailable = true
   }
@@ -65,7 +64,9 @@ local function craftingHandler()
         debug("Crafter - IA:", itemStack.name, " STATE:", currentState, " COUNT: ", result)
       elseif event == "craftedItemNotAvailable" and currentState == state.startup then
         currentState = state.idle
-      elseif event == "inItemNotAvailable" and currentState == state.idle then
+      end
+
+      if currentState == state.idle then
         rsCrafter:toggleOutput()
       end
     end

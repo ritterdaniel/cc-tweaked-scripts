@@ -56,11 +56,10 @@ function Inventory:importItemStack(itemStack)
   for slot = self.inSlots.first, self.inSlots.last do
     local slotItem = self.device.getItemDetail(slot)
     if slotItem == nil or slotItem.name == itemStack.name then
-      local movedItemCount = self.device.pullItems(itemStack.inventory.name, remainder, itemStack.slot)
+      local movedItemCount = self.device.pullItems(itemStack.inventory.name, itemStack.slot, remainder, slot)
       remainder = remainder - movedItemCount
       if remainder == 0 then
         break
-      else
       end
     end
   end
