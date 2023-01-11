@@ -57,10 +57,10 @@ function Inventory:importItemStack(itemStack)
     local slotItem = self.device.getItemDetail(slot)
     if slotItem == nil or slotItem.name == itemStack.name then
       local movedItemCount = self.device.pullItems(itemStack.inventory.name, remainder, itemStack.slot)
-      if movedItemCount == remainder then
+      remainder = remainder - movedItemCount
+      if remainder == 0 then
         break
       else
-        remainder = remainder - movedItemCount
       end
     end
   end

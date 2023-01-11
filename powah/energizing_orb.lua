@@ -1,7 +1,7 @@
 require "peripherals"
 
   -- Energizing Orb
-local crafter = Inventory:new("powah:energizing_orb_0", {first = 1, last = 1}, {first = 2})
+local crafter = Inventory:new("powah:energizing_orb_0", {first = 2}, {first = 1, last = 1})
 
 --   -- Chest which receives all items for crafting recipe
 -- local inChest = Inventory:new("ironchest:iron_chest_3")
@@ -10,7 +10,7 @@ local crafter = Inventory:new("powah:energizing_orb_0", {first = 1, last = 1}, {
 local outChest = Inventory:new("ironchest:iron_chest_5")
 
   -- RS crafter, to receive redstone pulse for next item set (redrouter instance)
-local rsCrafter = RedstoneSignalSender("redstoneIntegrator_0", "back")
+local rsCrafter = RedstoneSignalSender:new("redstoneIntegrator_0", "back")
 
 
 local config = {
@@ -55,17 +55,18 @@ local function craftingHandler()
         local itemStack = param
         debug("Crafter - IA:", itemStack.name, " STATE:", currentState)
         -- crafter.importItemStack(itemStack)
-        os.queueEvent("inChestCheckNextItem")
-      elseif event == "outItemAvailable" then
+        -- os.queueEvent("inChestCheckNextItem")
+      elseif event == "craftedItemAvailable" then
         local itemStack = param
-        local result = outChest.importItemStack(itemStack)
+        local result = outChest:importItemStack(itemStack)
         if result == 0 then
           currentState = state.idle
         end
-      elseif event == "outItemNotAvailable" and currentState == state.startup then
+        debug("Crafter - IA:", itemStack.name, " STATE:", currentState, " COUNT: ", result)
+      elseif event == "craftedItemNotAvailable" and currentState == state.startup then
         currentState = state.idle
       elseif event == "inItemNotAvailable" and currentState == state.idle then
-        rsCrafter.toggleRedstoneOutput()
+        rsCrafter:toggleOutput()
       end
     end
   until event == "terminate"
@@ -80,7 +81,7 @@ local function inChestMonitor()
     local event, _ = coroutine.yield()
     if subscribedEvents[event] then
       debug("inChestMonitor - Event - ".. event)
-      local itemStack = crafter.nextItemStack()
+      local itemStack = crafter:nextItemStack()
       if itemStack then
         debug("inChestMonitor - Item:".. itemStack.displayName)
         os.queueEvent("inItemAvailable", itemStack)
